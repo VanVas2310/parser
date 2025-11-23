@@ -37,7 +37,7 @@ pip install -r requirements.txt
 python parse_news.py
 
 
-## Результаты работы: 
+## Результаты работы:
 {
     "Политика": [
         {
