@@ -19,9 +19,10 @@
 - Библиотеки: requests, beautifulsoup4, lxml
 
 ## Установка
+
 Клонируйте репозиторий:
 ```bash
-git clone https://github.com/VanVas2310/parse_news.git
+git clone https://github.com/VanVas2310/parser.git
 cd parse_news
 
 ## Клонируйте виртуальное окружение:
