@@ -1,15 +1,15 @@
-from bs4 import BeautifulSoup
-import requests
-import json
-import re
+from bs4 import BeautifulSoup # это нужно для парсинга HTML
+import requests # это нужно для скачивания страницы
+import json # это нужно для сохранения результатов в JSON
+import re # это нужно для работы с регулярными выражениями
 
 def main():
     print("=== ПАРСЕР НОВОСТЕЙ ===")
     
     # Скачиваем страницу
     url = "https://web.archive.org/web/20230903112115/https://iz.ru/news"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
+    response = requests.get(url) # скачиваем страницу
+    soup = BeautifulSoup(response.content, 'html.parser') # парсим страницу с помощью BeautifulSoup
     
     # Создаем словарь для категорий
     categories = {
@@ -24,15 +24,19 @@ def main():
     }
     
     # Ищем все ссылки на странице
-    all_links = soup.find_all('a', href=True)
+    # находим все теги <a> с атрибутом href
+    all_links = soup.find_all('a', href=True) 
     
+
+
+
     # Обрабатываем каждую ссылку
-    for link in all_links:
-        title = link.get_text(strip=True)
-        href = link.get('href', '')
+    for link in all_links: 
+        title = link.get_text(strip=True) # получаем текст ссылки, убирая лишние пробелы через strip=True
+        href = link.get('href', '') # получаем значение атрибута href, если его нет, то пустую строку
         
         # Улучшенная фильтрация
-        if len(title) < 25:
+        if len(title) < 20:
             continue
             
         # Фильтруем ненужные элементы
@@ -58,30 +62,34 @@ def main():
         clean_link = clean_url(href)
         
         # Добавляем новость в категорию
-        if clean_link and clean_link.startswith('https://iz.ru'):
-            news_item = {
-                'title': clean_title,
-                'link': clean_link
+        if clean_link and clean_link.startswith('https://iz.ru'): # учитываем только ссылки на iz.ru
+            news_item = { # создаем словарь с новостью
+                'title': clean_title, # очищенный заголовок
+                'link': clean_link # очищенная ссылка
             }
-            categories[category].append(news_item)
+            categories[category].append(news_item) # добавляем новость в соответствующую категорию
+
+
+
+
     
     # Убираем дубликаты
-    for category in categories:
-        unique_news = []
-        seen_titles = set()
-        for news in categories[category]:
+    for category in categories: 
+        unique_news = [] 
+        seen_titles = set() # множество для отслеживания уникальных заголовков
+        for news in categories[category]: 
             # Нормализуем заголовок для сравнения
             normalized_title = news['title'].lower().replace(' ', '')
-            if normalized_title not in seen_titles:
-                seen_titles.add(normalized_title)
-                unique_news.append(news)
-        categories[category] = unique_news
+            if normalized_title not in seen_titles: # если такого заголовка еще нет, добавляем его
+                seen_titles.add(normalized_title) # отмечаем заголовок как увиденный
+                unique_news.append(news) # добавляем новость в уникальный список
+        categories[category] = unique_news # обновляем категорию уникальными новостями
     
     # Добавляем демо-новости ТОЛЬКО в пустые категории
-    for category in categories:
-        if not categories[category]:
-            categories[category].append({
-                'title': f'Пример новости в разделе {category}',
+    for category_name, news_list in categories.items():
+        if not news_list:
+            news_list.append({
+                'title': f'Пример новости в разделе {category_name}',
                 'link': 'https://iz.ru'
             })
     
@@ -91,41 +99,52 @@ def main():
     print("="*50)
     
     total_news = 0
-    for category, news_list in categories.items():
-        print(f"\n📁 {category} ({len(news_list)} новостей):")
-        for i, news in enumerate(news_list, 1):
-            print(f"  {i}. {news['title']}")
-            if news['link'] != 'https://iz.ru':
+    for category, news_list in categories.items(): # перебираем категории и их новости
+        print(f"\n📁 {category} ({len(news_list)} новостей):") 
+        for i, news in enumerate(news_list, 1): # перебираем новости с нумерацией, enumerate делает нумерацию с 1
+            print(f"  {i}. {news['title']}") # выводим номер и заголовок новости
+            if news['link'] != 'https://iz.ru': # не выводим ссылку для демо-новостей
                 print(f"     🔗 {news['link']}")
         total_news += len(news_list)
     
     print(f"\n📊 ИТОГО: {len(categories)} разделов, {total_news} новостей")
     
+
+
+
     # Сохраняем в JSON
-    with open('news_results.json', 'w', encoding='utf-8') as f:
-        json.dump(categories, f, ensure_ascii=False, indent=2)
+    with open('news_results.json', 'w', encoding='utf-8') as f: 
+        json.dump(categories, f, ensure_ascii=False, indent=2) # сохраняем словарь в файл news_results.json с отступами для читаемости
     print("💾 Данные сохранены в 'news_results.json'")
+
+
+
+
 
 def clean_title_text(title):
     """Очищает заголовок и исправляет пробелы"""
     # Исправляем слипшиеся слова (ОбществоВ -> Общество В)
-    title = re.sub(r'([а-я])([А-Я])', r'\1 \2', title)
+    title = re.sub(r'([а-я])([А-Я])', r'\1 \2', title) # добавляем пробел между строчной и заглавной буквой
     
     # Убираем время в конце (13:15)
-    title = re.sub(r'\d{1,2}:\d{2}$', '', title)
+    title = re.sub(r'\d{1,2}:\d{2}$', '', title) 
     
     # Убираем даты в конце (3 сентября 2023, 13:03)
     title = re.sub(r'\d{1,2}\s+[а-я]+\s+\d{4}.*$', '', title)
     
-    # Убираем параметры
-    title = re.sub(r'\?main_click$', '', title)
-    
+    # Убираем параметры ссылки
+    title = re.sub(r'\?main_click$', '', title) # это часть URL-параметра или трекинговая метка, которая по‑ошибке попала в текст заголовка.    
+    # удаляет все пробельные символы (пробелы, переводы строк, табуляции)
     return title.strip()
 
-def get_category(title):
+
+
+
+def get_category(title): 
     """Определяет категорию новости по заголовку"""
-    title_lower = title.lower()
+    title_lower = title.lower() 
     
+    # Улучшенные ключевые слова для каждой категории
     politics_words = [
         'путин', 'президент', 'правительство', 'госдума', 'парламент', 'депутат', 
         'министр', 'власть', 'выборы', 'кампания', 'мэр', 'оппозиция', 'коалиция',
@@ -224,22 +243,27 @@ def get_category(title):
     else:
         return "Общество"
 
+
+
+
+
+
 def clean_url(url):
-    #Очищает URL от архива и делает полную ссылку
-    if not url:
-        return ""
+    """Очищает URL от архива и делает полную ссылку"""
+    if not url: # если ссылка пустая
+        return "" # возвращаем пустую строку
     
     # Убираем часть архива
-    if '/web/20230903112115/' in url:
-        url = url.replace('/web/20230903112115/', '')
+    if '/web/20230903112115/' in url: 
+        url = url.replace('/web/20230903112115/', '') 
     
     # Делаем полную ссылку
-    if url.startswith('/'):
-        return f"https://iz.ru{url}"
-    elif url.startswith('http'):
-        return url
-    else:
+    if url.startswith('/'): # если ссылка относительная
+        return f"https://iz.ru{url}" # добавляем домен iz.ru
+    elif url.startswith('http'): # если ссылка уже полная
+        return url # возвращаем как есть
+    else: 
         return ""
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     main()
